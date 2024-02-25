@@ -1,13 +1,393 @@
-<!DOCTYPE html>
-<html>
+<!--DOCTYPE html-->
+<html lang="en">
 <head>
-<title>Page Title</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notes</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    
+      <script>
+   var firebaseConfig = {
+    apiKey: "AIzaSyDrYPU0e0r6lX3QGZmB5ZCm8sQ6gEF6A7I",
+            authDomain: "pluspengujian.firebaseapp.com",
+            databaseURL: "https://pluspengujian-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "pluspengujian",
+            storageBucket: "pluspengujian.appspot.com",
+            messagingSenderId: "198993219453",
+            appId: "1:198993219453:web:f26fee6c6fe9fe89820614",
+            measurementId: "G-NY1PWQX4HF"
+    
+  };
+
+    </script>
+    
+  <style>
+  .cellActions {
+  max-width: 200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cellActions .btn {
+  margin: 0 5px;
+}
+  </style>
 </head>
+
+
 <body>
+  <div class="container">
+    <style>
+    #status-message {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background-color: #f0f0f0;
+        padding: 3px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        font-weight: bold;
+    }
+</style>
 
-<h1>This is a Heading</h1>
-<p>This is a paragraph.</p>
+<p id="status-message"></p>
+    <form id="websiteForm">
+      <h3 class="text-center mt-3" style="font-size: 2rem;">Notes</h3>
+      <div class="row mb-1 align-items-center">
+  <div class="col-auto">
+    <label for="websiteName" class="form-label fw-bold" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 0;">Title :</label>
+  </div>
+  <div class="col">
+    <input type="text" class="form-control" id="websiteName" name="websiteName" required placeholder="Nama Website" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;">
+  </div>
+</div>
 
+      <div class="text-center mb-3 mt-3">
+          <button type="button" class="btn btn-primary" onclick="addWebsite()"
+          style="font-size: 0.8rem; padding: 0.25rem 0.5rem; font-weight: bold;">Add Notes</button>
+        
+            <!-- Tombol Login -->
+            <button id="popupButton" type="button" class="btn btn-primary" onclick="popup()"
+            style="font-size: 0.8rem; padding: 0.25rem 0.5rem; font-weight: bold;">Login</button>
+
+          <button id="logoutButton" type="button" class="btn btn-primary" onclick="logout()"
+          style="font-size: 0.8rem; padding: 0.25rem 0.5rem; font-weight: bold;">Logout</button>
+      </div>
+
+      <div class="text-center" id="notification"></div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-striped" style="border-collapse: collapse; border: 1px solid #dee2e6;">
+        <thead class="bg-success text-white">
+          <tr>
+            <th style="border: 1px solid #dee2e6; font-size: 0.8rem; width: 5%; text-align: center;">No.</th>
+            <th style="border: 1px solid #dee2e6; font-size: 0.8rem; width: 60%; text-align: center;">Title</th>
+            <th style="border: 1px solid #dee2e6; font-size: 0.8rem; width: 35%;">Actions</th>
+            <!-- Added Actions header -->
+          </tr>
+        </thead>
+        <tbody id="websiteTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+  firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const websiteTableBody = document.getElementById('websiteTableBody');
+    let rowNumber = 0;
+
+    database.ref('/selesai').on('child_added', function (snapshot) {
+      const website = snapshot.val();
+      const newRow = websiteTableBody.insertRow(0);
+      const cellNumber = newRow.insertCell(0);
+      const cellName = newRow.insertCell(1);
+      const cellActions = newRow.insertCell(2);
+
+      cellNumber.textContent = ++rowNumber;
+      cellName.textContent = website.name;
+
+      const editButton = document.createElement('button');
+      editButton.classList.add('btn', 'btn-info', 'mx-1');
+      editButton.textContent = 'Edit';
+      editButton.addEventListener('click', function () {
+        editTitle(snapshot.key, website.name);
+      });
+
+      const deleteButton = document.createElement('button');
+      deleteButton.classList.add('btn', 'btn-danger', 'mx-1');
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', function () {
+        deleteTitle(snapshot.key, newRow);
+      });
+
+      const copyButton = document.createElement('button');
+      copyButton.classList.add('btn', 'btn-success', 'mx-1');
+      copyButton.textContent = 'Copy';
+      copyButton.addEventListener('click', function () {
+        copyToClipboard(website.name);
+      });
+
+      editButton.style.fontSize = '0.5rem';
+      editButton.style.padding = '0.1rem 0.25rem';
+      deleteButton.style.fontSize = '0.5rem';
+      deleteButton.style.padding = '0.1rem 0.25rem';
+      copyButton.style.fontSize = '0.5rem';
+      copyButton.style.padding = '0.1rem 0.25rem';
+
+      editButton.style.marginRight = '0.2rem';
+      deleteButton.style.marginRight = '0.2rem';
+
+      cellActions.style.display = 'flex';
+
+      cellActions.appendChild(editButton);
+      cellActions.appendChild(deleteButton);
+      cellActions.appendChild(copyButton);
+    });
+
+    function addWebsite() {
+      const websiteNameInput = document.getElementById('websiteName');
+      const websiteName = websiteNameInput.value;
+
+      if (websiteName) {
+        const newWebsiteRef = database.ref('selesai/').push();
+        newWebsiteRef.set({
+          name: websiteName,
+        });
+
+        const notificationElement = document.getElementById('notification');
+        notificationElement.innerHTML = '<p class="success-notification">Title added successfully!</p>';
+        setTimeout(() => {
+          notificationElement.innerHTML = '';
+        }, 3000);
+
+        websiteNameInput.value = '';
+      } else {
+        alert('Please fill in all fields.');
+      }
+    }
+
+    function editTitle(titleKey, currentName) {
+      const newTitle = prompt('Enter new title:', currentName);
+      if (newTitle && newTitle !== currentName) {
+        database.ref('/selesai/' + titleKey).update({
+          name: newTitle
+        });
+      }
+    }
+
+    function deleteTitle(titleKey, row) {
+      const confirmation = confirm('Are you sure you want to delete this Title?');
+      if (confirmation) {
+        database.ref('/selesai/' + titleKey).remove()
+          .then(function () {
+            row.remove();
+          })
+          .catch(function (error) {
+            console.error('Error removing title: ', error);
+          });
+      }
+    }
+
+    function copyToClipboard(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('Copied to clipboard: ' + text);
+    }
+  </script>
+<!-- Style untuk form login -->
+<style>
+.success-notification {
+  color: green;
+}
+.error-notification {
+  color: red;
+}
+</style>
+<!-- Style untuk popup login -->
+<style>
+.popup {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+.popup-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+</style>
+<!-- Popup Login -->
+<div id="popup" class="popup">
+  <div class="popup-content">
+    <span class="close">&times;</span>
+    <h2>Login</h2>
+    <div class="container" id="loginContainer">
+      <!-- Formulir Login akan dimasukkan melalui JavaScript -->
+    </div>
+    <!-- Notifikasi -->
+    <div id="notification"></div>
+  </div>
+</div>
+<!-- Skrip JavaScript -->
+<script>
+function popup() {
+  document.querySelector(".popup").style.display = "block";
+  createLoginForm();
+}
+
+document.querySelector(".close").addEventListener("click", function() {
+  document.querySelector(".popup").style.display = "none";
+});
+
+function createLoginForm() {
+  var loginContainer = document.getElementById("loginContainer");
+  var formHTML = `
+    <form id="loginForm">
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+      
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+
+      <button class="btn btn-primary mt-2 text-center mb-3 mt-3" style="font-size: 0.8rem; padding: 0.25rem 0.5rem; font-weight: bold; mt-2;" type="button" onclick="login()">Login</button>
+    </form>
+  `;
+  loginContainer.innerHTML = formHTML;
+
+  // Tambahkan event listener untuk tombol login
+  document.getElementById("loginForm").addEventListener("submit", function(event) {
+    event.preventDefault(); // Mencegah form untuk melakukan submit
+    login(); // Panggil fungsi login() saat formulir disubmit
+  });
+}
+
+function login() {
+  // Dapatkan nilai email dan password dari formulir
+  var email = document.getElementById("email").value;
+  var password = document.getElementById("password").value;
+
+  // Lakukan validasi atau kirim data login ke server
+  // Contoh validasi sederhana untuk email dan password tidak kosong
+  if (email && password) {
+    // Tampilkan notifikasi login berhasil
+    document.getElementById("notification").innerHTML = "<div class='success-notification'>Login berhasil.</div>";
+  } else {
+    // Tampilkan notifikasi login gagal
+    document.getElementById("notification").innerHTML = "<div class='error-notification'>Email dan password wajib diisi.</div>";
+  }
+}
+</script>
+
+<script>
+     function login() {
+      var email = document.getElementById('email').value;
+      var password = document.getElementById('password').value;
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          var user = userCredential.user;
+          console.log('Login Success:', user);
+
+          const notificationElement = document.getElementById('notification');
+          notificationElement.innerHTML = '<p class="success-notification">Login Success!</p>';
+          setTimeout(function(){
+            notificationElement.innerHTML = '';
+          }, 3000);
+
+          window.location.href = '#';
+        })
+        .catch((error) => {
+          var errorCode = error.code;
+          var errorMessage = error.message;
+
+          const notificationElement = document.getElementById('notification');
+          if (errorCode === 'auth/user-not-found') {
+            notificationElement.innerHTML = '<p class="error-notification">Email not registered!</p>';
+          } else if (errorCode === 'auth/wrong-password') {
+            notificationElement.innerHTML = '<p class="error-notification">Password wrong!</p>';
+          } else if (errorCode === 'auth/email-already-in-use') {
+            notificationElement.innerHTML = '<p class="error-notification">Email is already registered!</p>';
+          } else {
+            notificationElement.innerHTML = '<p class="error-notification">Login failed: ' + errorMessage + '</p>';
+          }
+                });
+        }
+</script>
+<!-- 
+  <script src="https://firebasestorage.googleapis.com/v0/b/parijo-s.appspot.com/o/utility%2Fconfig.js?alt=media&token=63d43313-c356-4034-8fba-7871a09bef05"></script>
+ 
+    <script>
+        firebase.initializeApp(firebaseConfig);
+    </script>
+     -->
+
+<script>
+  
+function logout() {
+  firebase.auth().signOut().then(() => {
+    console.log('Logout berhasil');
+
+    const notificationElement = document.getElementById('notification');
+    notificationElement.innerHTML = '<p class="success-notification">Logout berhasil!</p>';
+    setTimeout(function(){
+      notificationElement.innerHTML = '';
+    }, 3000);
+
+    window.location.href = '#'; 
+  }).catch((error) => {
+    console.error('Logout error:', error);
+  });
+}
+</script>
+<script>
+     firebase.auth().onAuthStateChanged((user) => {
+    const statusMessageElement = document.getElementById("status-message");
+
+    if (user) {
+      statusMessageElement.textContent = "ONLINE...!!";
+    } else {
+      statusMessageElement.textContent = "OFFLINE...!!";
+    }
+  });
+</script>
+  
 </body>
 </html>
-
