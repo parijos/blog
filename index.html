@@ -141,6 +141,20 @@
         copyToClipboard(website.name);
       });
 
+      
+      const openInNewTabButton = document.createElement('button');
+openInNewTabButton.classList.add('btn', 'btn-primary', 'mx-1');
+openInNewTabButton.textContent = 'Open';
+openInNewTabButton.addEventListener('click', function () {
+  const url = document.title;
+  window.open(url, '_blank');
+});
+
+openInNewTabButton.style.fontSize = '0.5rem';
+openInNewTabButton.style.padding = '0.1rem 0.25rem';
+
+cellActions.appendChild(openInNewTabButton);
+
       editButton.style.fontSize = '0.5rem';
       editButton.style.padding = '0.1rem 0.25rem';
       deleteButton.style.fontSize = '0.5rem';
