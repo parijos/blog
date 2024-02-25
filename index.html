@@ -146,7 +146,7 @@
 openInNewTabButton.classList.add('btn', 'btn-primary', 'mx-1');
 openInNewTabButton.textContent = 'Open';
 openInNewTabButton.addEventListener('click', function () {
-  const url = document.title;
+  const url = website.name;
   window.open(url, '_blank');
 });
 
